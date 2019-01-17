@@ -15,3 +15,9 @@ def login():
     password.send_keys(c.password)
     submit = browser.find_element_by_id('qa-button-login')
     submit.click()
+
+def main():
+    login()
+
+if __name__ == '__main__':
+    main()
