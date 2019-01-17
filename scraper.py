@@ -16,9 +16,27 @@ def login():
     password.send_keys(c.password)
     submit = browser.find_element_by_id("qa-button-login")
     submit.click()
+    
     time.sleep(8)
-    html_source = browser.page_source
-    print(html_source)
+    return browser
+
+
+'''
+job id
+name
+title
+date
+location
+startTime
+endTime
+'''
+def get_jobs(browser):
+    jobs = browser.find_element_by_id("availableJobs").find_elements_by_class_name("job")
+    print(jobs)
+
+# def compare_jobs():
+
+# def update_jobs():
 
 def send_sms():
     account_sid = c.sid
@@ -33,7 +51,8 @@ def send_sms():
     )
 
 def main():
-    send_sms()
+    browser = login()
+    get_jobs(browser)
 
 if __name__ == "__main__":
     main()
