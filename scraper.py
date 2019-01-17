@@ -5,6 +5,7 @@ import os
 from twilio.rest import Client
 import config as c
 import pickle
+from job import Job
 
 def login():
     browser = webdriver.Chrome(c.driver)
@@ -25,20 +26,19 @@ def get_jobs(browser):
     jobs = browser.find_element_by_id("availableJobs").find_elements_by_class_name("job")
     new_jobs = {}
     for job in jobs:
-        new_jobs[job.get_attribute("id")] = job
+        jobObj = Job(job)
+        new_jobs[jobObj.get_id()] = jobObj
     return new_jobs
 
 def compare_jobs(new_jobs):
     file = open("jobs_dict.txt", "rb")
     old_jobs = pickle.load(file)
+    file.close()
 
-    for job in old_jobs:
-        print(job)
+    for job in old_jobs.keys():
         if job not in new_jobs:
             old_jobs.pop(job)
-    for job in new_jobs:
-        print("\n--\n")
-        print(job)
+    for job in new_jobs.keys():
         if job in old_jobs:
             new_jobs.pop(job)
         else:
@@ -47,7 +47,6 @@ def compare_jobs(new_jobs):
     file = open("jobs_dict.txt", "wb")
     pickle.dump(old_jobs, file)
     file.close()
-    
     return new_jobs
 
 def send_sms(jobs):
@@ -56,24 +55,20 @@ def send_sms(jobs):
 
     client = Client(account_sid, auth_token)
 
+    msg = "You have " + str(len(jobs)) + " new job(s) available:\n\n"
+
     for job in jobs:
-        details = job_details(jobs[job])
-        msg = "You have " + len(jobs) + " new job(s) available:\n" + details
+        details = jobs[job].job_message()
+        link = "https://sub.aesoponline.com/Substitute/Home"
+        msg += details
+    
+    msg += "View here: " + link
 
     client.messages.create(
         to = c.me,
         from_ = c.twilio,
         body = msg
     )
-
-def job_details(job):
-    name = job.find_element_by_class_name("name").text
-    title = job.find_element_by_class_name("title").text
-    date = job.find_element_by_class_name("itemDate").text
-    start = job.find_element_by_class_name("startTime").text
-    end = job.find_element_by_class_name("endTime").text
-    location = job.find_element_by_class_name("locationName").text
-    return name + "\n" + title + "\nFrom " + start + " to " + end + " on " + date + " at " + location
 
 def main(refresh, br):
     if not refresh:
@@ -85,7 +80,11 @@ def main(refresh, br):
     new_jobs = get_jobs(browser)
     new_jobs = compare_jobs(new_jobs)
     if len(new_jobs) != 0:
-      send_sms(new_jobs)
+        send_sms(new_jobs)
+        print("New jobs sent")
+    else:
+        print("No new jobs")
+    print("Checking again in 15 minutes")
     time.sleep(900)
     main(True, browser)
 
