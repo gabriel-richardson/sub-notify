@@ -75,12 +75,19 @@ def job_details(job):
     location = job.find_element_by_class_name("locationName").text
     return name + "\n" + title + "\nFrom " + start + " to " + end + " on " + date + " at " + location
 
-def main():
-    browser = login()
+def main(refresh, br):
+    if not refresh:
+        browser = login()
+    else:
+        browser = br
+        browser.refresh()
+        
     new_jobs = get_jobs(browser)
     new_jobs = compare_jobs(new_jobs)
     if len(new_jobs) != 0:
       send_sms(new_jobs)
+    time.sleep(900)
+    main(True, browser)
 
 if __name__ == "__main__":
-    main()
+    main(False, None)
