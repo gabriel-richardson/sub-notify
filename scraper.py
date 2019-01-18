@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 import time
 from time import sleep
 import os
@@ -8,9 +9,11 @@ import pickle
 from job import Job
 
 def login():
-    browser = webdriver.Chrome(c.driver)
+    options = Options()
+    options.headless = True
+    browser = webdriver.Chrome(c.driver, chrome_options=options)
     browser.get(c.webpage)
-    time.sleep(2)
+    time.sleep(5)
 
     username = browser.find_element_by_id("Username")
     username.send_keys(c.username)
@@ -18,7 +21,8 @@ def login():
     password.send_keys(c.password)
     submit = browser.find_element_by_id("qa-button-login")
     submit.click()
-    
+    print("Login successful")
+
     time.sleep(10)
     return browser
 
@@ -47,6 +51,8 @@ def compare_jobs(new_jobs):
     file = open("jobs_dict.txt", "wb")
     pickle.dump(old_jobs, file)
     file.close()
+
+    print("Fetching new jobs")
     return new_jobs
 
 def send_sms(jobs):
@@ -65,7 +71,7 @@ def send_sms(jobs):
     msg += "View here: " + link
 
     client.messages.create(
-        to = c.me,
+        to = {c.me, c.abby},
         from_ = c.twilio,
         body = msg
     )
@@ -76,6 +82,7 @@ def main(refresh, br):
     else:
         browser = br
         browser.refresh()
+        print("Refreshing page")
         
     new_jobs = get_jobs(browser)
     new_jobs = compare_jobs(new_jobs)
