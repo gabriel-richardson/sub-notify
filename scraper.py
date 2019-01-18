@@ -1,5 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 import time
 from time import sleep
 import os
@@ -13,9 +16,8 @@ def login():
     options.headless = True
     browser = webdriver.Chrome(c.driver, chrome_options=options)
     browser.get(c.webpage)
-    time.sleep(5)
 
-    username = browser.find_element_by_id("Username")
+    username = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "Username")))
     username.send_keys(c.username)
     password = browser.find_element_by_id("Password")
     password.send_keys(c.password)
@@ -27,7 +29,8 @@ def login():
     return browser
 
 def get_jobs(browser):
-    jobs = browser.find_element_by_id("availableJobs").find_elements_by_class_name("job")
+    jobTable = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "availableJobs")))
+    jobs = jobTable.find_elements_by_class_name("job")
     new_jobs = {}
     for job in jobs:
         jobObj = Job(job)
@@ -39,6 +42,8 @@ def compare_jobs(new_jobs):
     old_jobs = pickle.load(file)
     file.close()
 
+    print("Fetching new jobs")
+    
     for job in old_jobs.keys():
         if job not in new_jobs:
             old_jobs.pop(job)
@@ -52,7 +57,6 @@ def compare_jobs(new_jobs):
     pickle.dump(old_jobs, file)
     file.close()
 
-    print("Fetching new jobs")
     return new_jobs
 
 def send_sms(jobs):
