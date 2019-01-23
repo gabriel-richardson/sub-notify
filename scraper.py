@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 import time
 from time import sleep
 import os
@@ -17,19 +18,32 @@ def login():
     browser = webdriver.Chrome(c.driver, chrome_options=options)
     browser.get(c.webpage)
 
-    username = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "Username")))
+    while True:
+        try:
+            username = WebDriverWait(browser, 15).until(EC.presence_of_element_located((By.ID, "Username")))
+            password = WebDriverWait(browser, 15).until(EC.presence_of_element_located((By.ID, "Password")))
+            submit = WebDriverWait(browser, 15).until(EC.presence_of_element_located((By.ID, "qa-button-login")))
+            break
+        except TimeoutException:
+            print("Couldn't find login form, refreshing")
+            browser.refresh()
+
     username.send_keys(c.username)
-    password = browser.find_element_by_id("Password")
     password.send_keys(c.password)
-    submit = browser.find_element_by_id("qa-button-login")
     submit.click()
     print("Login successful")
-
-    time.sleep(10)
+    
     return browser
 
 def get_jobs(browser):
-    jobTable = WebDriverWait(browser, 10).until(EC.presence_of_element_located((By.ID, "availableJobs")))
+    while True:
+        try:
+            jobTable = WebDriverWait(browser, time).until(EC.presence_of_element_located((By.ID, "availableJobs")))
+            break
+        except TimeoutException:
+            print("Couldn't find job table, refreshing")
+            browser.refresh()
+
     jobs = jobTable.find_elements_by_class_name("job")
     new_jobs = {}
     for job in jobs:
@@ -52,7 +66,7 @@ def compare_jobs(new_jobs):
             new_jobs.pop(job)
         else:
             old_jobs.update({job:new_jobs[job]})
-    
+
     file = open("jobs_dict.txt", "wb")
     pickle.dump(old_jobs, file)
     file.close()
@@ -75,7 +89,7 @@ def send_sms(jobs):
     msg += "View here: " + link
 
     client.messages.create(
-        to = {c.me, c.abby},
+        to = {c.me},
         from_ = c.twilio,
         body = msg
     )
@@ -87,7 +101,7 @@ def main(refresh, br):
         browser = br
         browser.refresh()
         print("Refreshing page")
-        
+
     new_jobs = get_jobs(browser)
     new_jobs = compare_jobs(new_jobs)
     if len(new_jobs) != 0:
