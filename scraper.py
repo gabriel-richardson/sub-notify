@@ -38,10 +38,11 @@ def login():
 def get_jobs(browser):
     while True:
         try:
-            jobTable = WebDriverWait(browser, time).until(EC.presence_of_element_located((By.ID, "availableJobs")))
+            jobTable = WebDriverWait(browser, 15).until(EC.presence_of_element_located((By.ID, "availableJobs")))
             break
         except TimeoutException:
             print("Couldn't find job table, refreshing")
+            browser.login()
             browser.refresh()
 
     jobs = jobTable.find_elements_by_class_name("job")
@@ -89,7 +90,7 @@ def send_sms(jobs):
     msg += "View here: " + link
 
     client.messages.create(
-        to = {c.me},
+        to = {c.me, c.abby},
         from_ = c.twilio,
         body = msg
     )
