@@ -42,6 +42,7 @@ def get_jobs(browser):
             break
         except TimeoutException:
             print("Couldn't find job table, refreshing")
+            browser.refresh()
             login()
             browser.refresh()
 
