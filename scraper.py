@@ -44,7 +44,6 @@ def get_jobs(browser):
             print("Couldn't find job table, refreshing")
             browser.refresh()
             login()
-            browser.refresh()
 
     jobs = jobTable.find_elements_by_class_name("job")
     new_jobs = {}
@@ -91,7 +90,13 @@ def send_sms(jobs):
     msg += "View here: " + link
 
     client.messages.create(
-        to = {c.me, c.abby},
+        to = {c.abby},
+        from_ = c.twilio,
+        body = msg
+    )
+
+    client.messages.create(
+        to = {c.me},
         from_ = c.twilio,
         body = msg
     )
